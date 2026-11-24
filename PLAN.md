@@ -58,7 +58,17 @@ flowchart LR
 
 附加验证（写入 `out/report.json` 的 `arch`，不计入硬门）：DSH 扩展 `pluginData` 经 `.fig` 往返是否保留；behaviours 控件经 JSX 和 `.fig` 往返是否保留；场景图导出回 JSX 的 token 数。
 
-### 2026-11-24 结果：不过门
+### 2026-11-24 第一次：不过门
+
+### 2026-11-24 M0.1：像素门仍不过
+
+口径改成同一进程渲染两次。冷启动 3276ms，预热后 324ms，两项都在 5s 内。token 比值 1.43。中文换行和 12 个命名区块通过。像素差 11.6%。
+
+按区域：状态栏 0.5%，标题区 2.0%，照片带 32.9%（占全部差异的 57%），课程卡正文 13.7%。照片那一块单独就占全屏约 6.6 个百分点，所以 5% 这条门在这张照片上到不了。滤镜已经按 CSS 的 contrast / brightness / saturate 烘进像素（`lib/doc/photo.js`），渐变改成从上到下，位置和浏览器对齐到几个像素。剩下的是照片采样和字形边缘，热力图在 `out/home-diff.png`。没有放宽阈值。
+
+第二屏 `star-paywall/paywall` 只记录、不设门：token 比值 0.38，像素差 23.7%，预热 167ms。它没有按首页去抠，说明首页的数字不是只调了一屏才好看。
+
+按「不过门就不往上叠」，文档引擎先不接进插件。M0.1 的脚本、滤镜和两屏 JSX 先提交。
 
 `scripts/m0/home.jsx` 是按 `tokens.css` 写的一版等价 JSX。中文字体用本机飞书缓存的 `PingFang.ttc`（`/System/Library/Fonts/PingFang.ttc` 在这台机器上不存在）。对照图在 `out/home-compare.png`（参考图、JSX、HTML 导入），数字在 `out/report.json`。
 

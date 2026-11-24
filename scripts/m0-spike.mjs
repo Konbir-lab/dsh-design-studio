@@ -15,7 +15,8 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 import { renderJSX } from '@open-pencil/core/design-jsx'
 import { sceneNodeToJSX } from '@open-pencil/design-jsx'
 import { fontManager } from '@open-pencil/core/text'
-import { computeImageHash } from '@open-pencil/scene-graph/images'
+import { computeImageHash, coverImageTransform, imageHeader } from '@open-pencil/scene-graph/images'
+import { bakeCssFilter } from '../lib/doc/photo.js'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { headlessRenderNodes } from '@open-pencil/core/io/formats/raster'
 import { readHTMLDocument } from '@open-pencil/core/io/formats/html/import'
@@ -23,7 +24,10 @@ import { readBehaviour } from '@open-pencil/scene-graph/behaviours'
 import { createBrowser } from '../lib/browser.js'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
-const DESIGN = path.resolve(ROOT, '../block-iron')
+const BANDS = [
+  ['statusbar', 0, 54], ['brand', 54, 110], ['kicker+hero', 110, 230], ['hero-sub', 230, 275],
+  ['stats', 275, 370], ['section-head', 370, 410], ['class-photo', 410, 580], ['class-body', 580, 760], ['tabbar', 760, 844],
+]
 const VIEW = { w: 390, h: 844, scale: 2 }
 const SECTIONS = ['status', 'brand', 'kicker', 'hero', 'hero-2', 'hero-sub', 'stats', 'class-card', 'class-photo', 'checkin', 'member', 'store', 'tabbar']
 const FONT_CANDIDATES = [
@@ -181,13 +185,17 @@ async function shoot(htmlPath) {
   }
 }
 
-function attachPhoto(graph, nodes) {
+let bakedPhoto = null
+
+async function attachPhoto(graph, nodes, designDir) {
   const photo = byName(nodes, 'class-photo')
-  const file = path.join(DESIGN, 'assets/ai-photo-fitness-01.jpg')
+  const file = path.join(designDir, 'assets/ai-photo-fitness-01.jpg')
   if (!photo || !fs.existsSync(file)) return false
-  const bytes = fs.readFileSync(file)
+  if (!bakedPhoto) bakedPhoto = await bakeCssFilter(fs.readFileSync(file), { contrast: 1.14, brightness: 0.82, saturate: 0.92 })
+  const bytes = bakedPhoto
   const hash = computeImageHash(bytes)
   graph.images.set(hash, bytes)
+  const header = imageHeader(bytes)
   graph.updateNode(photo.id, {
     fills: [{
       type: 'IMAGE',
@@ -195,8 +203,8 @@ function attachPhoto(graph, nodes) {
       opacity: 1,
       visible: true,
       imageHash: hash,
-      imageScaleMode: 'FILL',
-      filters: { contrast: 0.14, exposure: -0.18, saturation: -0.08 },
+      imageScaleMode: 'CROP',
+      imageTransform: coverImageTransform(photo.width, photo.height, header.width, header.height),
     }],
   })
   return true
@@ -243,7 +251,9 @@ async function renderPng(graph, id) {
 
 async function main() {
   const screen = arg('--screen', 'home')
-  const htmlPath = path.join(DESIGN, `${screen}.html`)
+  const record = process.argv.includes('--record')
+  const designDir = path.resolve(arg('--design', path.join(ROOT, '../block-iron')))
+  const htmlPath = path.join(designDir, `${screen}.html`)
   const jsxPath = path.join(ROOT, 'scripts/m0', `${screen}.jsx`)
   if (!fs.existsSync(htmlPath)) throw new Error(`没有 ${htmlPath}`)
   if (!fs.existsSync(jsxPath)) throw new Error(`没有 ${jsxPath}`)
@@ -265,8 +275,8 @@ async function main() {
   report.arch.font = fontFile
 
   const html = fs.readFileSync(htmlPath, 'utf8')
-  const appCss = fs.readFileSync(path.join(DESIGN, 'app.css'), 'utf8')
-  const tokensCss = fs.readFileSync(path.join(DESIGN, 'tokens.css'), 'utf8')
+  const appCss = fs.existsSync(path.join(designDir, 'app.css')) ? fs.readFileSync(path.join(designDir, 'app.css'), 'utf8') : ''
+  const tokensCss = fs.existsSync(path.join(designDir, 'tokens.css')) ? fs.readFileSync(path.join(designDir, 'tokens.css'), 'utf8') : ''
   const jsx = fs.readFileSync(jsxPath, 'utf8')
   const htmlSlice = usedCss(html, appCss, tokensCss)
   report.tokens.html = countTokens(htmlSlice)
@@ -279,20 +289,36 @@ async function main() {
   report.nodes.domVisible = shot.dom.visible
   report.nodes.scrollHeight = shot.dom.scrollHeight
 
-  const graph = new SceneGraph()
-  const started = Date.now()
-  const roots = await renderJSX(graph, jsx)
-  const renderedAt = Date.now()
-  const home = roots.find((r) => r.name === 'home')
-  if (!home) throw new Error('JSX 没有名为 home 的根')
-  const nodes = walk(graph, home.id)
-  report.arch.photo = attachPhoto(graph, nodes)
+  const draw = async () => {
+    const graph = new SceneGraph()
+    const started = Date.now()
+    const roots = await renderJSX(graph, jsx)
+    const renderMs = Date.now() - started
+    const frame = roots.find((r) => r.type === 'FRAME')
+    if (!frame) throw new Error('JSX 没有画板')
+    const nodes = walk(graph, frame.id)
+    const photo = await attachPhoto(graph, nodes, designDir)
+    const pngStarted = Date.now()
+    const png = await renderPng(graph, frame.id)
+    return {
+      graph, roots, frame, nodes, photo, png,
+      renderMs, pngMs: Date.now() - pngStarted, totalMs: Date.now() - started,
+      warnings: roots.flatMap((r) => r.warnings || []),
+    }
+  }
+  const cold = await draw()
+  const warm = await draw()
+  const { graph, frame: home, nodes, png } = warm
+  report.elapsedMs = warm.totalMs
+  report.timing = {
+    cold: { renderMs: cold.renderMs, pngMs: cold.pngMs, totalMs: cold.totalMs },
+    warm: { renderMs: warm.renderMs, pngMs: warm.pngMs, totalMs: warm.totalMs },
+  }
+  report.warnings = warm.warnings
+  report.arch.photo = warm.photo
+  report.arch.knownGaps = ['PingFang 没有斜体字形，Chrome 会合成，引擎按正体画']
   const written = dshData(graph, graph.getNode(home.id))
   const before = behaviourOf(graph)
-  const pngStarted = Date.now()
-  const png = await renderPng(graph, home.id)
-  report.elapsedMs = Date.now() - started
-  report.arch.timing = { renderMs: renderedAt - started, pngMs: Date.now() - pngStarted }
   fs.writeFileSync(path.join(outDir, `${screen}.png`), png)
   fs.writeFileSync(path.join(outDir, `${screen}.fig`), await exportFigFile(graph))
 
@@ -314,7 +340,7 @@ async function main() {
   const sceneTexts = nodes.filter((n) => n.type === 'TEXT' && n.text)
   report.nodes.scene = nodes.length
   report.nodes.text = sceneTexts.length
-  const missing = SECTIONS.filter((name) => !byName(nodes, name))
+  const missing = screen === 'home' ? SECTIONS.filter((name) => !byName(nodes, name)) : []
   const plain = html.replace(/<[^>]+>/g, '').replace(/\s+/g, '')
   const unknown = sceneTexts
     .map((n) => String(n.text).replace(/\s+/g, ''))
@@ -342,6 +368,20 @@ async function main() {
   const jsxPng = readPng(png)
   const jsxDiff = diffAgainst(ref, jsxPng)
   report.pixelDiff.jsx = { ratio: jsxDiff.ratio, mismatched: jsxDiff.mismatched, size: jsxDiff.size }
+  const bandOf = (png, y, h, w) => {
+    const out = Buffer.alloc(w * h * 4)
+    for (let row = 0; row < h; row++) png.data.copy(out, row * w * 4, ((y + row) * png.width) * 4, ((y + row) * png.width + w) * 4)
+    return out
+  }
+  report.regions = BANDS.map(([name, y0, y1]) => {
+    const top = y0 * 2
+    const height = Math.min(y1 * 2, ref.height, jsxPng.height) - top
+    if (height <= 0) return { name, ratio: null }
+    const width = Math.min(ref.width, jsxPng.width)
+    const mismatched = pixelmatch(bandOf(ref, top, height, width), bandOf(jsxPng, top, height, width), null, width, height, { threshold: 0.1 })
+    return { name, ratio: mismatched / (width * height), mismatched }
+  })
+  fs.writeFileSync(path.join(outDir, `${screen}-diff.png`), PNG.sync.write(jsxDiff.png))
 
   try {
     const imported = await readHTMLDocument(html, {
@@ -370,12 +410,14 @@ async function main() {
     structure: missing.length === 0 && unknown.length === 0,
     pixels: jsxDiff.ratio < 0.05,
     cjk: report.cjkWrap.mismatches.length === 0,
-    elapsed: report.elapsedMs < 5000,
+    warm: warm.totalMs < 5000,
+    cold: cold.totalMs < 5000,
   }
   report.gate.pass = Object.values(report.gate).every(Boolean)
-  fs.writeFileSync(path.join(outDir, 'report.json'), JSON.stringify(report, null, 2))
-  console.log(JSON.stringify({ gate: report.gate, tokens: report.tokens, pixelDiff: report.pixelDiff, elapsedMs: report.elapsedMs, arch: report.arch, cjk: report.cjkWrap.mismatches.length, missing }, null, 2))
-  process.exit(report.gate.pass ? 0 : 2)
+  fs.writeFileSync(path.join(outDir, `${screen}.report.json`), JSON.stringify(report, null, 2))
+  if (screen === 'home') fs.writeFileSync(path.join(outDir, 'report.json'), JSON.stringify(report, null, 2))
+  console.log(JSON.stringify({ gate: report.gate, tokens: report.tokens, pixelDiff: report.pixelDiff, timing: report.timing, regions: report.regions, warnings: report.warnings, cjk: report.cjkWrap.mismatches.length, missing }, null, 2))
+  process.exit(!record && !report.gate.pass ? 2 : 0)
 }
 
 main().catch((error) => {
