@@ -6,9 +6,12 @@
 <style>
   html, body { margin: 0; background: #111; }
   img { display: block; width: 390px; height: auto; }
+  .bar { position: fixed; left: 16px; right: 16px; top: 16px; height: 4px; background: #333; }
+  .bar i { display: block; height: 100%; width: 100%; background: #C8FF2E; transform: scaleX(0.08); transform-origin: left center; }
 </style>
 </head>
 <body>
+<div class="bar" id="bar"><i></i></div>
 <img id="shot" alt="">
 <script>
 const q = new URLSearchParams(location.search)
@@ -21,13 +24,37 @@ function post(msg) {
   try { parent.postMessage(data, '*') } catch (e) { /* 外层不在 */ }
 }
 post({ type: 'hello', href: location.href })
-shot.src = 'screen.png?' + query
+const fill = document.querySelector('#bar i')
+async function waitEngine() {
+  for (let i = 0; i < 50; i++) {
+    let phase = 'loading'
+    try { phase = (await (await fetch('status')).json()).phase } catch { phase = 'loading' }
+    fill.style.transform = 'scaleX(' + (phase === 'ready' ? 1 : Math.min(0.92, 0.08 + i * 0.04)) + ')'
+    if (phase === 'ready') break
+    await new Promise((resolve) => setTimeout(resolve, 200))
+  }
+  shot.src = 'screen.png?' + query
+  shot.addEventListener('load', () => { const bar = document.getElementById('bar'); if (bar) bar.remove() }, { once: true })
+}
+waitEngine()
+shot.addEventListener('error', () => {
+  const card = document.createElement('div')
+  card.textContent = '这一屏出不了图'
+  card.style.cssText = 'position:fixed;inset:24px;display:flex;align-items:center;justify-content:center;color:#fff;background:#2a1212;border:1px solid #e8382f'
+  document.body.appendChild(card)
+})
 let nodes = []
 fetch('nodes.json?' + query).then((r) => r.json()).then((data) => {
   nodes = data.nodes || []
-  post({ type: 'ready', title: name || id, meta: 'app', natural: [390, 844], href: location.href })
+  post({ type: 'ready', title: data.name || name || id, meta: 'app', natural: [390, 844], href: location.href })
+  if (data.link) {
+    const next = document.createElement('div')
+    next.textContent = '下一屏 ' + data.link
+    next.style.cssText = 'position:fixed;left:8px;bottom:8px;color:#111;background:#fff;padding:6px 10px'
+    document.body.appendChild(next)
+  }
   const edit = document.createElement('a')
-  edit.href = 'edit/?id=' + encodeURIComponent(id || data.name || '')
+  edit.href = 'edit/?dsh=1'
   edit.textContent = '编辑图层'
   edit.style.cssText = 'position:fixed;top:8px;right:8px;color:#111;background:#C8FF2E;padding:6px 10px;text-decoration:none'
   document.body.appendChild(edit)

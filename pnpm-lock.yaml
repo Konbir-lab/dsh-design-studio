@@ -38,6 +38,9 @@ importers:
       vue:
         specifier: 3.5.41
         version: 3.5.41
+      yjs:
+        specifier: 13.6.27
+        version: 13.6.27
     devDependencies:
       '@vitejs/plugin-vue':
         specifier: ^6.0.11
@@ -1000,6 +1003,9 @@ packages:
   isarray@1.0.0:
     resolution: {integrity: sha512-VLghIWNM6ELQzo7zwmcg0NmTVyWKYjvIeM83yjp0wRDTmUnrM678fQbcKBo6n2CJEF0szoG//ytg+TKla89ALQ==}
 
+  isomorphic.js@0.2.5:
+    resolution: {integrity: sha512-PIeMbHqMt4DnUP3MA/Flc0HElYjMXArsw1qwJZcm9sqR8mq3l8NYizFMty0pWwE/tzIGH3EKK5+jes5mAr85yw==}
+
   js-base64@3.9.7:
     resolution: {integrity: sha512-UT2XYOCbXOXYoymbytretRDFnb6E6vYPqC1blehA/alnG6vRC0mNTQ6ijXYAPtiCG9o1FDNJXJvQtCwbChFDRQ==}
 
@@ -1014,6 +1020,11 @@ packages:
 
   jszip@3.10.2:
     resolution: {integrity: sha512-3l+rb15IOWtUhU0H5MFqES/T6Kh7abYwjosBey/vD6hDt8zoEffkSC5Ws5SGtgVw3gBx2NEbhTeSW1+kWkpyTQ==}
+
+  lib0@0.2.120:
+    resolution: {integrity: sha512-/a2eRImR8sZbmMVKe2we1/KukDQkuPyPf8yol6epvCu2PH6hurjcRI3mdGFFAi0uGoRJGyns99JquZgxwW1tQg==}
+    engines: {node: '>=16'}
+    hasBin: true
 
   lie@3.3.0:
     resolution: {integrity: sha512-UaiMJzeWRlEujzAuw5LokY1L5ecNQYZKfmyZ9L7wDHb/p5etKaxXhohBcrw0EYby+G/NA52vRSN4N39dxHAIwQ==}
@@ -1478,6 +1489,10 @@ packages:
     resolution: {integrity: sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw==}
     engines: {node: '>= 14.6'}
     hasBin: true
+
+  yjs@13.6.27:
+    resolution: {integrity: sha512-OIDwaflOaq4wC6YlPBy2L6ceKeKuF7DeTxx+jPzv1FHn9tCZ0ZwSRnUBxD05E3yed46fv/FWJbvR+Ud7x0L7zw==}
+    engines: {node: '>=16.0.0', npm: '>=8.0.0'}
 
   zod@4.6.7:
     resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
@@ -2399,6 +2414,8 @@ snapshots:
 
   isarray@1.0.0: {}
 
+  isomorphic.js@0.2.5: {}
+
   js-base64@3.9.7: {}
 
   jsep@1.6.0: {}
@@ -2413,6 +2430,10 @@ snapshots:
       pako: 1.0.11
       readable-stream: 2.3.8
       setimmediate: 1.0.5
+
+  lib0@0.2.120:
+    dependencies:
+      isomorphic.js: 0.2.5
 
   lie@3.3.0:
     dependencies:
@@ -3029,6 +3050,10 @@ snapshots:
       whynot: 5.0.0
 
   yaml@2.9.1: {}
+
+  yjs@13.6.27:
+    dependencies:
+      lib0: 0.2.120
 
   zod@4.6.7: {}
 

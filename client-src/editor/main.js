@@ -1,3 +1,4 @@
+import '@open-pencil/core/runtime-assets/install'
 import { createApp } from 'vue'
 import App from './App.vue'
 

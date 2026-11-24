@@ -28,12 +28,13 @@ flowchart LR
 
 标准见 [STANDARD.md](STANDARD.md)。按四个闭环推进，不再按旧的 M1–M5 勾选。
 
-- [x] 引擎骨架、三个自写工具、只读预览页、已 `link:` 挂载。老测试 545 项全绿，文档测试 5 项。
-- [ ] 闭环 1：Pencil 工具挂进 DSH，边写边看，画布上的文档屏，点选回对话。
-- [ ] 闭环 2：完整 Pencil 编辑界面（fork 的 `dsh-embed`），Yjs 房间，手改记录。
-- [ ] 闭环 3：文档屏的体检和看图，问题带 node id。
-- [ ] 闭环 4：演示和代码出口。
-- [ ] 收尾：界面打磨，`2.0.0-alpha.1`。
+- [x] 引擎骨架、Pencil 工具、只读预览页、图层列表编辑页，已 `link:` 挂载。
+- [x] 属性级 Yjs 房间：人和模型改位置、尺寸、圆角会合并，服务端落盘。WebSocket 在预览端口的 `/__dsh_design__/doc/room`。
+- [x] 文档屏 `look_design` 走引擎出图。`check_design` 带节点位置，字号阶梯会读 `tokens.css`。
+- [x] `handoff_design` 导出 HTML、Tailwind、JSX、Vue。`compare_design` 的设计稿一侧用引擎出的图。同一张图的差异低于 3%。
+- [ ] 闭环 2 还缺完整 Pencil 编辑界面（fork 的 `dsh-embed`）。现在的编辑页仍是图层列表加静态图。
+- [ ] 闭环 4 还缺手机看、远程看按 frame 导出，以及真实项目上把差异打到 3% 以下。生成门的照片区仍是 SSIM 0.40。
+- [ ] 收尾：角标、命令面板、错误卡。版本号已经是 `2.0.0-alpha.1`。
 
 上一轮把 M2 到 M5 标成完成是错的：可编辑画布、Yjs、门禁接入、交互和交接都还没做。
 
