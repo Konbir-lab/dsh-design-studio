@@ -1,0 +1,2 @@
+# Document engine lives here (lib/doc/engine.js and friends).
+# This directory is not lib/doc.js, which stays the existing PDF/PPTX exporter.

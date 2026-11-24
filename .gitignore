@@ -1,4 +1,6 @@
 node_modules/
+.pnpm-store/
 *.tgz
 .DS_Store
 assets/*.mp4
+out/
