@@ -46,17 +46,35 @@ flowchart LR
 
 ## M0 过门
 
-`node scripts/m0-spike.mjs --screen home`，对照 `block-iron/home.html`。
+`node scripts/m0-spike.mjs --screen home`，对照 `block-iron/home.html`（视口 390×844，截图 @2x，和 `look_design` 同一画幅；`look_design` 自己的 `scaleFor` 对这个尺寸是 1.86，这里按约定用 2）。
 
 - token 数 ≤ 同屏 HTML 的 1.5 倍
 - 结构无错层、漏层
-- 像素差 <5%
+- 像素差 <5%（pixelmatch，threshold 0.1，按重叠区域）
 - 中文不错行
-- 单屏端到端 <5s
+- 单屏端到端 <5s（`renderJSX` 到 PNG，不含浏览器截参考图）
 
 不过门就讨论 JSX 精简、分块生成或局部回退 HTML，不继续往上叠。
 
 附加验证（写入 `out/report.json` 的 `arch`，不计入硬门）：DSH 扩展 `pluginData` 经 `.fig` 往返是否保留；behaviours 控件经 JSX 和 `.fig` 往返是否保留；场景图导出回 JSX 的 token 数。
+
+### 2026-11-24 结果：不过门
+
+`scripts/m0/home.jsx` 是按 `tokens.css` 写的一版等价 JSX。中文字体用本机飞书缓存的 `PingFang.ttc`（`/System/Library/Fonts/PingFang.ttc` 在这台机器上不存在）。对照图在 `out/home-compare.png`（参考图、JSX、HTML 导入），数字在 `out/report.json`。
+
+| 门 | 结果 |
+| --- | --- |
+| token 比值 | 过。2953 / 3083 = 0.96。分母是 `home.html` 自身样式，加上 `app.css` 里本屏用到的规则，加上这些规则引用的 `tokens.css` 变量。三份全文是 5978。 |
+| 结构 | 过。12 个命名区块都在，场景文字都能在去掉标签后的 HTML 里找到。 |
+| 像素 | 不过。19.3%（253965 / 780×1688）。版式和照片对得上，差在状态栏和底栏图标、间距、渐变和照片调色。 |
+| 中文换行 | 过。标题两行和正文行数与浏览器一致。 |
+| 耗时 | 不过。6151ms，其中 `renderJSX` 2748ms，无头 PNG 3400ms。 |
+
+HTML 导入对照组：视口重叠区像素差 13.8%，但成图是 780×2512，不是 390×844 的一屏，绝对定位也散掉了。手写 JSX 更接近「一屏」，机器导入的视口重叠更接近像素。
+
+附加验证都成立：`dsh.links` / `dsh.states` 经 `.fig` 往返保留；`Switch` behaviour 往返后仍是 `switch`；导出回 JSX 是 3334 token。
+
+按停止点，M0 不过门，不继续做 M1。下一步只讨论三件事：JSX 再压（图标和渐变不要逐层手写）、分块生成，或这一屏里图标和照片局部回退 HTML。
 
 ## 停止点
 
