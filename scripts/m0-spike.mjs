@@ -10,6 +10,7 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { PNG } from 'pngjs'
 import pixelmatch from 'pixelmatch'
+import { ssim } from 'ssim.js'
 import { countTokens } from 'gpt-tokenizer'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { renderJSX } from '@open-pencil/core/design-jsx'
@@ -176,7 +177,13 @@ async function shoot(htmlPath) {
           for (const c of el.children) see(c)
         }
         see(document.body)
-        return { visible: n, scrollHeight: document.documentElement.scrollHeight }
+        return { visible: n, scrollHeight: document.documentElement.scrollHeight, photo: (() => {
+          const el = document.querySelector('.class-media, .class-photo, img.photo')
+          if (!el) return null
+          const r = el.getBoundingClientRect()
+          if (r.width < 8 || r.height < 8) return null
+          return { x: r.left, y: r.top, w: r.width, h: r.height }
+        })() }
       })()`)
       return { png, texts, dom }
     })
@@ -382,6 +389,28 @@ async function main() {
     return { name, ratio: mismatched / (width * height), mismatched }
   })
   fs.writeFileSync(path.join(outDir, `${screen}-diff.png`), PNG.sync.write(jsxDiff.png))
+  const photo = shot.dom.photo
+  if (photo) {
+    const x = Math.max(0, Math.round(photo.x * 2))
+    const y = Math.max(0, Math.round(photo.y * 2))
+    const w = Math.min(ref.width - x, jsxPng.width - x, Math.round(photo.w * 2))
+    const h = Math.min(ref.height - y, jsxPng.height - y, Math.round(photo.h * 2))
+    const cropRow = (src, srcW) => {
+      const out = Buffer.alloc(w * h * 4)
+      for (let row = 0; row < h; row++) src.copy(out, row * w * 4, (y + row) * srcW * 4 + x * 4, (y + row) * srcW * 4 + (x + w) * 4)
+      return out
+    }
+    const a = cropRow(ref.data, ref.width)
+    const b = cropRow(jsxPng.data, jsxPng.width)
+    const photoMismatch = pixelmatch(a, b, null, w, h, { threshold: 0.1 })
+    const restMismatch = Math.max(0, jsxDiff.mismatched - photoMismatch)
+    const restArea = ref.width * ref.height - w * h
+    report.pixelDiff.nonPhoto = { ratio: restArea ? restMismatch / restArea : 0, mismatched: restMismatch }
+    report.pixelDiff.photo = { ssim: ssim({ data: a, width: w, height: h }, { data: b, width: w, height: h }).mssim, box: { x, y, w, h } }
+  } else {
+    report.pixelDiff.nonPhoto = { ratio: jsxDiff.ratio, mismatched: jsxDiff.mismatched }
+    report.pixelDiff.photo = null
+  }
 
   try {
     const imported = await readHTMLDocument(html, {
@@ -408,7 +437,8 @@ async function main() {
   report.gate = {
     tokens: ratio <= 1.5,
     structure: missing.length === 0 && unknown.length === 0,
-    pixels: jsxDiff.ratio < 0.05,
+    pixelsNonPhoto: report.pixelDiff.nonPhoto.ratio < 0.05,
+    photoSsim: !report.pixelDiff.photo || report.pixelDiff.photo.ssim >= 0.9,
     cjk: report.cjkWrap.mismatches.length === 0,
     warm: warm.totalMs < 5000,
     cold: cold.totalMs < 5000,

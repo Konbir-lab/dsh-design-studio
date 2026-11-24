@@ -210,7 +210,7 @@
 
 ## 文档屏
 
-设计目录里有 `design.fig` 时，一屏是文档里的一个画板，用 `design_render` 写入 Design JSX，用 `design_patch` 按节点 id 改，用 `design_query` 读回。不要再把这一屏写成 HTML。
+设计目录里有 `design.fig` 时，一屏是文档里的一个画板。新做的设计直接用 `render` 写 Design JSX，不要再写 HTML。改已有的文档先 `get_jsx`，再按节点改。点选胶囊里的「节点：」就是 node id。
 
 写 JSX 时：
 

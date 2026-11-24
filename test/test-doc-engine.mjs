@@ -80,6 +80,22 @@ test('play follows a dsh.link without editing the frame', async () => {
   assert.ok(node.pluginData.length >= before)
 })
 
+test('pencil render writes a frame the model can name', async () => {
+  const { pencilTools } = await import('../lib/doc/pencil-tools.js')
+  const { previewStream } = await import('../lib/doc/stream.js')
+  const { checkFrame } = await import('../lib/doc/check.js')
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dsh-pencil-'))
+  const render = pencilTools().find((tool) => tool.name === 'render')
+  const made = await render.execute({ dir, jsx: '<Frame name="home" w={80} h={40}><Text name="odd" size={13}>字</Text></Frame>' })
+  assert.match(made.text, /home/)
+  const stream = previewStream()
+  const snap = stream.push('<Frame name="a" w={10} h={10} />')
+  assert.equal(String(snap.tree.type).toLowerCase(), 'frame')
+  const graph = await openFig(docFile(dir))
+  const frame = [...graph.getAllNodes()].find((node) => node.name === 'home')
+  const checked = checkFrame(graph, frame)
+  assert.ok(checked.extra.some((issue) => issue.rule === 'type-step'))
+})
 test('export writes html and the tools round-trip a patch', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dsh-tool-'))
   const rendered = await designRenderTool.execute({ dir, jsx: '<Frame name="home" w={80} h={40} bg="#fff"><Text name="t" size={14}>你好</Text></Frame>' })

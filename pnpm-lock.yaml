@@ -42,6 +42,9 @@ importers:
       pngjs:
         specifier: 7.0.0
         version: 7.0.0
+      ssim.js:
+        specifier: ^3.5.0
+        version: 3.5.0
 
 packages:
 
@@ -742,6 +745,9 @@ packages:
   source-map-js@1.2.4:
     resolution: {integrity: sha512-J7ZjMvHd9O1fcT/5V09QWaaSl2BbWx3F6O08spde82Namf9UB0GxRVIPiNbVsdKkoizHiSpTodo3vp2bAy91MA==}
     engines: {node: '>=6.0.0'}
+
+  ssim.js@3.5.0:
+    resolution: {integrity: sha512-Aj6Jl2z6oDmgYFFbQqK7fght19bXdOxY7Tj03nF+03M9gCBAjeIiO8/PlEGMfKDwYpw4q6iBqVq2YuREorGg/g==}
 
   std-env@4.3.0:
     resolution: {integrity: sha512-OtU/EgQ1kIm5KwqQpBC6ZEMXrZRui11w8zgfTWp8cdO9B8OaPsbA8bTHO2P+HNo1VlUTGMVBwPhydu6poeXiag==}
@@ -1804,6 +1810,8 @@ snapshots:
   setimmediate@1.0.5: {}
 
   source-map-js@1.2.4: {}
+
+  ssim.js@3.5.0: {}
 
   std-env@4.3.0: {}
 

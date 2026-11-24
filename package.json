@@ -94,11 +94,15 @@
   "devDependencies": {
     "gpt-tokenizer": "4.1.2",
     "pixelmatch": "8.0.0",
-    "pngjs": "7.0.0"
+    "pngjs": "7.0.0",
+    "ssim.js": "^3.5.0"
   },
   "pnpm": {
     "peerDependencyRules": {
-      "ignoreMissing": ["ai", "vite"]
+      "ignoreMissing": [
+        "ai",
+        "vite"
+      ]
     }
   }
 }

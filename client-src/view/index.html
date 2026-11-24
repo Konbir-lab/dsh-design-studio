@@ -12,18 +12,36 @@
 <img id="shot" alt="">
 <script>
 const q = new URLSearchParams(location.search)
+const id = q.get('id') || ''
 const name = q.get('name') || ''
+const query = id ? 'id=' + encodeURIComponent(id) : 'name=' + encodeURIComponent(name)
 const shot = document.getElementById('shot')
-shot.src = 'screen.png?name=' + encodeURIComponent(name)
+function post(msg) {
+  const data = { dshDesign: 1, ...msg }
+  try { parent.postMessage(data, '*') } catch (e) { /* 外层不在 */ }
+}
+post({ type: 'hello', href: location.href })
+shot.src = 'screen.png?' + query
 let nodes = []
-fetch('nodes.json?name=' + encodeURIComponent(name)).then((r) => r.json()).then((data) => { nodes = data.nodes || [] })
+fetch('nodes.json?' + query).then((r) => r.json()).then((data) => {
+  nodes = data.nodes || []
+  post({ type: 'ready', title: name || id, meta: 'app', natural: [390, 844], href: location.href })
+})
 shot.addEventListener('click', (event) => {
   const rect = shot.getBoundingClientRect()
   const x = (event.clientX - rect.left) * (390 / rect.width)
   const y = (event.clientY - rect.top) * (shot.naturalHeight / shot.naturalWidth) * (390 / rect.width)
   const hit = nodes.filter((n) => x >= n.x && y >= n.y && x <= n.x + n.w && y <= n.y + n.h).sort((a, b) => a.w * a.h - b.w * b.h)[0]
   if (!hit) return
-  parent.postMessage({ dshDesign: 1, nodeId: hit.id, name: hit.name, type: hit.type }, '*')
+  post({
+    type: 'picked',
+    payload: {
+      kind: 'element', name: hit.name || hit.type, text: '', selector: hit.id,
+      html: '<' + hit.type + ' data-node="' + hit.id + '">',
+      rect: { x: Math.round(hit.x), y: Math.round(hit.y), w: Math.round(hit.w), h: Math.round(hit.h) },
+      styles: {}, href: location.href, nodeId: hit.id,
+    },
+  })
 })
 </script>
 </body>
