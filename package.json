@@ -1,11 +1,11 @@
 {
   "name": "dsh-design-studio",
-  "version": "1.2.0",
+  "version": "2.0.0-alpha.1",
   "type": "module",
   "scripts": {
     "test": "node --test --test-concurrency=1 test/*.mjs",
     "m0": "node scripts/m0-spike.mjs",
-    "build": "node scripts/build-doc.mjs"
+    "build": "vite build"
   },
   "description": "Design workbench in the DeepSeek Harness right sidebar: watch web / app / mini program / poster screens generate on a canvas with device frames, click an element or mark it up with a brush to send it to the chat, open existing HTML pages, tweak design tokens with sliders, compare versions, extract a brand's design system from a site, turn a design into React / Vue / HTML code checked pixel by pixel, export share-ready images and scan to view on your phone.",
   "license": "MIT",
@@ -89,13 +89,17 @@
     "@open-pencil/dom-css": "0.17.0",
     "@open-pencil/fig": "0.17.0",
     "@open-pencil/html-engine": "0.17.0",
-    "@open-pencil/scene-graph": "0.17.0"
+    "@open-pencil/scene-graph": "0.17.0",
+    "@open-pencil/vue": "0.17.0",
+    "vue": "3.5.41"
   },
   "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.11",
     "gpt-tokenizer": "4.1.2",
     "pixelmatch": "8.0.0",
     "pngjs": "7.0.0",
-    "ssim.js": "^3.5.0"
+    "ssim.js": "^3.5.0",
+    "vite": "^6.4.6"
   },
   "pnpm": {
     "peerDependencyRules": {

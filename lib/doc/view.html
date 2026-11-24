@@ -26,6 +26,11 @@ let nodes = []
 fetch('nodes.json?' + query).then((r) => r.json()).then((data) => {
   nodes = data.nodes || []
   post({ type: 'ready', title: name || id, meta: 'app', natural: [390, 844], href: location.href })
+  const edit = document.createElement('a')
+  edit.href = 'edit/?id=' + encodeURIComponent(id || data.name || '')
+  edit.textContent = '编辑图层'
+  edit.style.cssText = 'position:fixed;top:8px;right:8px;color:#111;background:#C8FF2E;padding:6px 10px;text-decoration:none'
+  document.body.appendChild(edit)
 })
 shot.addEventListener('click', (event) => {
   const rect = shot.getBoundingClientRect()
